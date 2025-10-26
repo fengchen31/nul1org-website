@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Product Archive | Draggable Grid</title>
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+    <link rel="stylesheet" type="text/css" href="css/base.css" />
+    <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <script>
+      document.documentElement.className = 'js';
+    </script>
+  </head>
+
+  <body class="loading">
+    <main>
+      <div class="container">
+        <div class="grid" id="product-grid">
+          <!-- Products will be dynamically loaded here -->
+        </div>
+      </div>
+
+      <div class="details">
+        <div class="details__title" id="product-titles">
+          <!-- Product titles will be dynamically loaded here -->
+        </div>
+        <div class="details__body">
+          <div class="details__thumb"></div>
+          <div class="details__texts" id="product-details">
+            <!-- Product details will be dynamically loaded here -->
+          </div>
+        </div>
+      </div>
+
+      <div class="cross">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18" stroke="#313131" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          <path d="M6 6L18 18" stroke="#313131" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+      </div>
+
+      <script>
+        // Fetch products from Shopify API
+        async function loadProducts() {
+          try {
+            // Try different possible collection handles
+            const collectionHandles = ['nul1-org', 'nul1org', 'nul1.org'];
+            let products = null;
+
+            for (const handle of collectionHandles) {
+              const response = await fetch(`/api/products?collection=${handle}`);
+              const data = await response.json();
+
+              if (data && data.length > 0) {
+                products = data;
+                console.log(`Found ${data.length} products in collection: ${handle}`);
+                break;
+              }
+            }
+
+            if (!products || products.length === 0) {
+              console.warn('No products found in nul1.org collection');
+              // Use dummy data if no products
+              useDummyProducts();
+              return;
+            }
+
+            renderProducts(products);
+          } catch (error) {
+            console.error('Error loading products:', error);
+            useDummyProducts();
+          }
+        }
+
+        function useDummyProducts() {
+          // Use the original dummy products as fallback
+          const grid = document.getElementById('product-grid');
+          grid.innerHTML = `
+            <div class="column">
+              <div class="product"><div data-id="1"><img src="./public/img-1.png" /></div></div>
+              <div class="product"><div data-id="2"><img src="./public/img-2.png" /></div></div>
+              <div class="product"><div data-id="3"><img src="./public/img-3.png" /></div></div>
+            </div>
+            <div class="column">
+              <div class="product"><div data-id="4"><img src="./public/img-4.png" /></div></div>
+              <div class="product"><div data-id="5"><img src="./public/img-5.png" /></div></div>
+              <div class="product"><div data-id="6"><img src="./public/img-6.png" /></div></div>
+            </div>
+            <div class="column">
+              <div class="product"><div data-id="7"><img src="./public/img-7.png" /></div></div>
+              <div class="product"><div data-id="1"><img src="./public/img-1.png" /></div></div>
+              <div class="product"><div data-id="2"><img src="./public/img-2.png" /></div></div>
+            </div>
+          `;
+
+          const titles = document.getElementById('product-titles');
+          titles.innerHTML = `
+            <p data-title="1" data-text>Crimson Amphora</p>
+            <p data-title="2" data-text>Rustic Urn</p>
+            <p data-title="3" data-text>Golden Vessel</p>
+            <p data-title="4" data-text>Sunlit Amphora</p>
+            <p data-title="5" data-text>Midnight Reliquary</p>
+            <p data-title="6" data-text>Amber Ewer</p>
+            <p data-title="7" data-text>Sylvan Chalice</p>
+          `;
+
+          const details = document.getElementById('product-details');
+          details.innerHTML = `
+            <p data-desc="1" data-text><span>$300.00</span>This bold red vase stands out with its vibrant hue.<button>Add to cart</button></p>
+            <p data-desc="2" data-text><span>$220.00</span>With its earthy tones and natural speckled finish.<button>Add to cart</button></p>
+            <p data-desc="3" data-text><span>$240.00</span>Bright and cheerful, the yellow vase radiates positivity.<button>Add to cart</button></p>
+            <p data-desc="4" data-text><span>$300.00</span>Generous in size and striking in presence.<button>Add to cart</button></p>
+            <p data-desc="5" data-text><span>$390.00</span>Sleek and sophisticated, the black vase embodies timeless elegance.<button>Add to cart</button></p>
+            <p data-desc="6" data-text><span>$340.00</span>A playful mix of texture and color.<button>Add to cart</button></p>
+            <p data-desc="7" data-text><span>$240.00</span>Crafted from natural wood, this vase celebrates organic beauty.<button>Add to cart</button></p>
+          `;
+        }
+
+        function renderProducts(products) {
+          const numColumns = 10;
+          const columns = Array.from({ length: numColumns }, () => []);
+
+          // Create a mapping for product IDs
+          const productIdMap = new Map();
+
+          // Distribute products across columns
+          products.forEach((product, index) => {
+            const columnIndex = index % numColumns;
+            const productId = index + 1; // Simple sequential ID
+            columns[columnIndex].push({ ...product, productId });
+            productIdMap.set(productId, product);
+          });
+
+          const grid = document.getElementById('product-grid');
+          grid.innerHTML = columns.map((columnProducts) => {
+            const productsHTML = columnProducts.map((product) => {
+              const image = product.node.images.edges[0]?.node;
+              const imageUrl = image?.url || './public/img-1.png';
+
+              return `
+                <div class="product">
+                  <div data-id="${product.productId}">
+                    <img src="${imageUrl}" alt="${escapeHtml(product.node.title)}" />
+                  </div>
+                </div>
+              `;
+            }).join('');
+
+            return `<div class="column">${productsHTML}</div>`;
+          }).join('');
+
+          // Render titles
+          const titles = document.getElementById('product-titles');
+          titles.innerHTML = products.map((product, index) => {
+            const productId = index + 1;
+            return `<p data-title="${productId}" data-text>${escapeHtml(product.node.title)}</p>`;
+          }).join('');
+
+          // Render details
+          const details = document.getElementById('product-details');
+          details.innerHTML = products.map((product, index) => {
+            const productId = index + 1;
+            const price = parseFloat(product.node.priceRange.minVariantPrice.amount);
+            const currency = product.node.priceRange.minVariantPrice.currencyCode;
+
+            // Format description for better readability
+            let description = formatDescription(product.node.description || 'No description available');
+            const priceSymbol = currency === 'USD' ? '$' : currency;
+
+            return `
+              <p data-desc="${productId}" data-text>
+                <span>${priceSymbol}${price.toFixed(2)}</span>
+                ${escapeHtml(description)}
+                <button>Add to cart</button>
+              </p>
+            `;
+          }).join('');
+
+          // Initialize grid after products are rendered
+          setTimeout(() => {
+            if (window.initShopifyGrid) {
+              window.initShopifyGrid();
+            }
+          }, 200);
+        }
+
+        // Helper function to format Shopify descriptions
+        function formatDescription(text) {
+          // Add spaces before capital letters that follow lowercase letters
+          let formatted = text.replace(/([a-z])([A-Z])/g, '$1 $2');
+
+          // Add space before specific keywords
+          const keywords = ['Category', 'Material', 'Fabric', 'Color', 'Features', 'Size', 'Made'];
+          keywords.forEach(keyword => {
+            formatted = formatted.replace(new RegExp(keyword, 'g'), ' ' + keyword);
+          });
+
+          // Clean up multiple spaces
+          formatted = formatted.replace(/\s+/g, ' ').trim();
+
+          // Limit length for better display
+          if (formatted.length > 350) {
+            formatted = formatted.substring(0, 350) + '...';
+          }
+
+          return formatted;
+        }
+
+        // Helper function to escape HTML
+        function escapeHtml(text) {
+          const div = document.createElement('div');
+          div.textContent = text;
+          return div.innerHTML;
+        }
+
+        // Start loading products immediately
+        loadProducts();
+      </script>
+
+      <script src="./js/gsap.js"></script>
+      <script src="./js/Draggable.js"></script>
+      <script src="./js/Flip.js"></script>
+      <script src="./js/SplitText.js"></script>
+      <script src="./js/imagesloaded.pkgd.min.js"></script>
+      <script type="module" src="./js/app-shopify.js"></script>
+    </main>
+  </body>
+</html>
