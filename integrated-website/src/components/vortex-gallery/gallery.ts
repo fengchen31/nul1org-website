@@ -27,9 +27,9 @@ interface ImageInfo {
 
 export default class Gallery {
   scene: THREE.Scene
-  instancedMaterial: THREE.ShaderMaterial
-  material: THREE.ShaderMaterial
-  mesh: THREE.Mesh
+  instancedMaterial!: THREE.ShaderMaterial
+  material!: THREE.ShaderMaterial
+  mesh!: THREE.Mesh
   imageInfos: ImageInfo[] = []
   atlasTexture: THREE.Texture | null = null
   scrollY: {
@@ -40,7 +40,7 @@ export default class Gallery {
     direction: number
   }
   cameraZ: number
-  isScrolling: boolean
+  isScrolling!: boolean
   textureIndex: number = 0
 
   constructor({ scene, cameraZ }: Props) {

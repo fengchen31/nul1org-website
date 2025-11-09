@@ -9,20 +9,20 @@ import Gallery from "./gallery"
 import normalizeWheel from "normalize-wheel"
 
 export default class Canvas {
-  element: HTMLCanvasElement
-  scene: THREE.Scene
-  camera: THREE.PerspectiveCamera
-  renderer: THREE.WebGLRenderer
-  sizes: Size
-  dimensions: Dimensions
-  time: number
-  clock: THREE.Clock
-  raycaster: THREE.Raycaster
-  mouse: THREE.Vector2
-  orbitControls: OrbitControls
-  debug: GUI
-  gallery: Gallery
-  scrollY: number
+  element!: HTMLCanvasElement
+  scene!: THREE.Scene
+  camera!: THREE.PerspectiveCamera
+  renderer!: THREE.WebGLRenderer
+  sizes!: Size
+  dimensions!: Dimensions
+  time!: number
+  clock!: THREE.Clock
+  raycaster!: THREE.Raycaster
+  mouse!: THREE.Vector2
+  orbitControls!: OrbitControls
+  debug!: GUI
+  gallery!: Gallery
+  scrollY!: number
   lastDirection: number = 1
 
   constructor() {
