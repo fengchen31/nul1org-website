@@ -160,6 +160,8 @@ export default class InfiniteGrid {
             extraY: 0,
             rect: el.getBoundingClientRect(),
             ease: Math.random() * 0.5 + 0.5,
+            isViewed: false,
+            viewProgress: 0,
           });
         });
       });
@@ -250,6 +252,28 @@ export default class InfiniteGrid {
       const fy = item.y + scrollY + item.extraY + newY;
       item.el.style.transform = `translate(${fx}px, ${fy}px)`;
       item.img.style.transform = `scale(${1.2 + 0.2 * this.mouse.press.c * item.ease}) translate(${-this.mouse.x.c * item.ease * 10}%, ${-this.mouse.y.c * item.ease * 10}%)`;
+
+      // Check if item is in center viewport (30% from center)
+      const itemCenterX = fx + item.rect.width / 2;
+      const itemCenterY = fy + item.rect.height / 2;
+      const screenCenterX = this.winW / 2;
+      const screenCenterY = this.winH / 2;
+      const distanceX = Math.abs(itemCenterX - screenCenterX);
+      const distanceY = Math.abs(itemCenterY - screenCenterY);
+      const centerThreshold = 0.3;
+
+      if (distanceX < this.winW * centerThreshold && distanceY < this.winH * centerThreshold) {
+        item.isViewed = true;
+      }
+
+      // Smooth transition for view progress
+      const targetProgress = item.isViewed ? 1 : 0;
+      item.viewProgress += (targetProgress - item.viewProgress) * 0.05;
+
+      // Apply blur filter based on view progress
+      const blurAmount = (1 - item.viewProgress) * 20;
+      const opacity = 0.6 + item.viewProgress * 0.4;
+      item.img.style.filter = `blur(${blurAmount}px) opacity(${opacity})`;
     });
 
     this.scroll.last.x = this.scroll.current.x;

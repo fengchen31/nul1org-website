@@ -20,9 +20,9 @@ const shader = createShader(
 
 /**
  * Get velocity from pressure map
- * @param {RenderTarget} target 
- * @param {Texture} pressureMap 
- 
+ * @param {RenderTarget} target
+ * @param {Texture} pressureMap
+ */
 export default function (target, pressureMap, maskTexture) {
     shader(target, {
         pressureMap, maskTexture,

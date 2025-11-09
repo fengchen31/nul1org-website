@@ -10,6 +10,27 @@
     <link rel="shortcut icon" href="https://tympanus.net/favicon/favicon.ico" />
     <link rel="stylesheet" type="text/css" href="css/base.css" />
     <link rel="stylesheet" type="text/css" href="css/style.css" />
+    <style>
+      body {
+        background-color: #ffffff !important;
+      }
+      body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background-color: rgba(255, 255, 255, 1);
+        z-index: 9999;
+        pointer-events: none;
+        animation: revealContent 3.5s ease-in-out forwards;
+      }
+      @keyframes revealContent {
+        0% { background-color: rgba(255, 255, 255, 1); z-index: 9999; }
+        40% { background-color: rgba(255, 255, 255, 1); z-index: 9999; }
+        75% { background-color: rgba(255, 255, 255, 0.01); z-index: 9999; }
+        76% { background-color: rgba(255, 255, 255, 0); z-index: -1; }
+        100% { background-color: rgba(255, 255, 255, 0); z-index: -1; }
+      }
+    </style>
     <script>
       document.documentElement.className = 'js';
 
@@ -49,11 +70,18 @@
       }
 
       function renderProducts(products) {
+        // Triple the products to fill the screen
+        const tripleProducts = [
+          ...products,
+          ...products.map(p => ({ ...p })),
+          ...products.map(p => ({ ...p }))
+        ];
+
         const numColumns = 10;
         const columns = Array.from({ length: numColumns }, () => []);
 
         // Distribute products across columns
-        products.forEach((product, index) => {
+        tripleProducts.forEach((product, index) => {
           const columnIndex = index % numColumns;
           const productId = index + 1;
           columns[columnIndex].push({ ...product, productId });
@@ -62,6 +90,10 @@
         // Render grid
         const grid = document.querySelector('.grid');
         if (grid) {
+          // Show grid with animation
+          grid.style.opacity = '1';
+          grid.style.transition = 'opacity 0.3s ease';
+
           grid.innerHTML = columns.map((columnProducts) => {
             const productsHTML = columnProducts.map((product) => {
               const image = product.node.images.edges[0]?.node;
@@ -83,7 +115,7 @@
         // Render titles
         const titlesContainer = document.querySelector('.details__title');
         if (titlesContainer) {
-          titlesContainer.innerHTML = products.map((product, index) => {
+          titlesContainer.innerHTML = tripleProducts.map((product, index) => {
             const productId = index + 1;
             return `<p data-title="${productId}" data-text>${escapeHtml(product.node.title)}</p>`;
           }).join('');
@@ -92,7 +124,7 @@
         // Render details
         const detailsContainer = document.querySelector('.details__texts');
         if (detailsContainer) {
-          detailsContainer.innerHTML = products.map((product, index) => {
+          detailsContainer.innerHTML = tripleProducts.map((product, index) => {
             const productId = index + 1;
             const price = parseFloat(product.node.priceRange.minVariantPrice.amount);
             const currency = product.node.priceRange.minVariantPrice.currencyCode;
@@ -141,7 +173,7 @@
   <body class="loading">
     <main>
       <div class="container">
-        <div class="grid">
+        <div class="grid" style="opacity: 0;">
           <div class="column">
             <div class="product">
               <div data-id="3"><img src="./public/img-3.png" /></div>

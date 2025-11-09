@@ -94,7 +94,7 @@ void main() {
 
             float t = thickness(center);
 
-            vec4 color = background_R * R + background_T * (1.0 - R) * (1.0 - shadowFactor * t) + (t * brightFactor);
+            vec4 color = background_R * R + vec4(t * brightFactor);
             color.rgb = color.rgb * mix(vec3(1), glassColor, t);
             final_color = final_color + color * 0.25;
 
@@ -103,6 +103,8 @@ void main() {
         }
     }
 
+    // Make background transparent where there's no glass
+    final_color.a = smoothstep(0.0, 0.1, final_color.a);
     gl_FragColor = final_color;
     // gl_FragColor = vec4(thickness(cp.a,center));
     // gl_FragColor = vec4(R);

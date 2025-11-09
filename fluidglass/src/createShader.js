@@ -1,6 +1,6 @@
 import { Renderer, Program, Mesh, Geometry, Texture, RenderTarget } from "ogl";
 
-const renderer = new Renderer();
+const renderer = new Renderer({ alpha: true, premultipliedAlpha: false });
 const gl = renderer.gl;
 
 const geometry = new Geometry(gl, {

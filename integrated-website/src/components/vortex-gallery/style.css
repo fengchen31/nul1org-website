@@ -1,0 +1,296 @@
+html,
+body,
+div,
+span,
+applet,
+object,
+iframe,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+blockquote,
+pre,
+a,
+abbr,
+acronym,
+address,
+big,
+cite,
+code,
+del,
+dfn,
+em,
+img,
+ins,
+kbd,
+q,
+s,
+samp,
+small,
+strike,
+strong,
+sub,
+sup,
+tt,
+var,
+b,
+u,
+i,
+center,
+dl,
+dt,
+dd,
+ol,
+ul,
+li,
+fieldset,
+form,
+label,
+legend,
+table,
+caption,
+tbody,
+tfoot,
+thead,
+tr,
+th,
+td,
+article,
+aside,
+canvas,
+details,
+embed,
+figure,
+figcaption,
+footer,
+header,
+hgroup,
+menu,
+nav,
+output,
+ruby,
+section,
+summary,
+time,
+mark,
+audio,
+video {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+/* HTML5 display-role reset for older browsers */
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
+  display: block;
+}
+body {
+  line-height: 1;
+}
+ol,
+ul {
+  list-style: none;
+}
+blockquote,
+q {
+  quotes: none;
+}
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+  content: "";
+  content: none;
+}
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+body {
+  background:
+    radial-gradient(circle, rgba(100, 100, 100, 0.2) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-color: #ffffff;
+  background-attachment: fixed;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+}
+
+/* Animated overlay with 3 stages */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    radial-gradient(circle, rgba(100, 100, 100, 0.2) 1px, transparent 1px);
+  background-size: 20px 20px;
+  background-color: rgba(255, 255, 255, 1);
+  background-attachment: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  animation: revealContent 3.5s ease-in-out forwards;
+}
+
+@keyframes revealContent {
+  0% {
+    /* Stage 1: Dots + solid background cover everything */
+    background-color: rgba(255, 255, 255, 1);
+    z-index: 9999;
+  }
+  40% {
+    /* Stage 1: Wait for content to load */
+    background-color: rgba(255, 255, 255, 1);
+    z-index: 9999;
+  }
+  75% {
+    /* Stage 2: Background fades to transparent (almost), dots still in front */
+    background-color: rgba(255, 255, 255, 0.01);
+    z-index: 9999;
+  }
+  76% {
+    /* Stage 3: When background becomes fully transparent (0), move to back immediately */
+    background-color: rgba(255, 255, 255, 0);
+    z-index: -1;
+  }
+  100% {
+    /* Stage 3: Stay in back */
+    background-color: rgba(255, 255, 255, 0);
+    z-index: -1;
+  }
+}
+
+#webgl {
+  position: fixed;
+  inset: 0;
+  top: 0;
+  left: 0;
+}
+#app {
+  position: relative;
+  pointer-events: none;
+  width: 100%;
+  height: 100dvh;
+  z-index: 10;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.container {
+  width: 25vmax;
+  height: 30vmax;
+  background: purple;
+}
+
+/* Fluid Glass Logo */
+.logo-container {
+  position: fixed;
+  top: 2rem;
+  left: 2rem;
+  z-index: 50;
+  width: 400px;
+  height: 120px;
+  overflow: hidden;
+  pointer-events: none;
+  transition: all 0.5s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.logo-container:hover {
+  transform: translateY(-2px);
+}
+
+.fluidglass-logo {
+  width: 500px;
+  height: 250px;
+  border: none;
+  display: block;
+  transform: scale(1);
+  transform-origin: center;
+  pointer-events: auto;
+}
+
+/* Dithering Shader Container */
+.dithering-container {
+  position: fixed;
+  bottom: 2rem;
+  left: 30%;
+  transform: translateX(-50%);
+  z-index: 50;
+  width: 450px;
+  height: 300px;
+  overflow: hidden;
+  pointer-events: none;
+  transition: all 0.5s ease;
+}
+
+.dithering-container:hover {
+  transform: translateX(-50%) translateY(-4px);
+}
+
+.dithering-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+  display: block;
+  pointer-events: auto;
+}
+
+/* Navigation buttons */
+.nav-buttons {
+  position: fixed;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 50;
+  display: flex;
+  gap: 0.75rem;
+  pointer-events: auto;
+}
+
+.nav-button {
+  position: relative;
+  background: rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(100px);
+  color: white;
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  text-decoration: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 500;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1), 0 8px 32px 0 rgba(255, 255, 255, 0.1);
+  transition: all 0.5s;
+}
+
+.nav-button:hover {
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 20px rgba(255, 255, 255, 0.1), 0 8px 32px 0 rgba(255, 255, 255, 0.2);
+}

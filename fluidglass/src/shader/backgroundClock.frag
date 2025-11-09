@@ -63,5 +63,5 @@ void main() {
     // final_color.b = pow(final_color.b, 2.2);
 
     gl_FragColor.rgb = final_color;
-    gl_FragColor.a = 1.0;
+    gl_FragColor.a = 0.0;
 }

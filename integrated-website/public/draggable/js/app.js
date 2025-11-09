@@ -14,6 +14,15 @@ class Grid {
     this.cross = document.querySelector(".cross")
 
     this.isDragging = false
+
+    // Zoom state
+    this.zoom = {
+      current: 1,
+      target: 1,
+      min: 0.1, // Will be calculated dynamically
+      max: 2,   // Maximum zoom in
+      sensitivity: 0.01
+    }
   }
 
   init() {
@@ -26,9 +35,11 @@ class Grid {
     const timeline = gsap.timeline()
 
     timeline.set(this.dom, { scale: .5 })
+
+    // Ensure all products start visible (opacity: 1) to prevent disappearing
     timeline.set(this.products, {
       scale: 0.5,
-      opacity: 0,
+      opacity: 1,
     })
 
     timeline.to(this.products, {
@@ -48,10 +59,22 @@ class Grid {
       onComplete: () => {
         this.setupDraggable()
         this.addEvents()
+        this.refreshProducts()
+
+        // Make sure all products are visible before observing
+        this.products.forEach(product => {
+          gsap.set(product, { scale: 1, opacity: 1 })
+        })
+
         this.observeProducts()
         this.handleDetails()
       }
     })
+  }
+
+  refreshProducts() {
+    // Re-query products after dynamic loading
+    this.products = [...document.querySelectorAll(".product div")]
   }
 
   centerGrid() {
@@ -72,13 +95,16 @@ class Grid {
   setupDraggable() {
     this.dom.classList.add("--is-loaded")
 
+    // Calculate minimum zoom to fit entire grid
+    this.calculateZoomLimits()
+
     this.draggable = Draggable.create(this.grid, {
       type: "x,y",
       bounds: {
-        minX: -(this.grid.offsetWidth - window.innerWidth) - 200,
-        maxX: 200,
-        minY: -(this.grid.offsetHeight - window.innerHeight) - 100,
-        maxY: 100
+        minX: -(this.grid.offsetWidth - window.innerWidth),
+        maxX: 0,
+        minY: -(this.grid.offsetHeight - window.innerHeight),
+        maxY: 0
       },
       inertia: true,
       allowEventDefault: true,
@@ -96,32 +122,87 @@ class Grid {
     })[0]
   }
 
+  calculateZoomLimits() {
+    const gridWidth = this.grid.offsetWidth
+    const gridHeight = this.grid.offsetHeight
+    const windowWidth = window.innerWidth
+    const windowHeight = window.innerHeight
+
+    // Calculate the scale needed to fit grid width to viewport width
+    // This will make left and right edges align with screen sides
+    const scaleX = windowWidth / gridWidth
+
+    // Set minimum zoom to fit width perfectly
+    this.zoom.min = scaleX
+
+    // Ensure min is reasonable (not too small)
+    this.zoom.min = Math.max(0.1, this.zoom.min)
+
+    console.log('Zoom limits:', { min: this.zoom.min, max: this.zoom.max, gridWidth, gridHeight, windowWidth, windowHeight, scaleX })
+  }
+
   addEvents() {
     window.addEventListener("wheel", (e) => {
       e.preventDefault()
 
-      const deltaX = -e.deltaX * 7
-      const deltaY = -e.deltaY * 7
+      // Check if this is a pinch-to-zoom gesture (ctrlKey is true on trackpad pinch)
+      if (e.ctrlKey) {
+        // Don't allow zoom when details are showing
+        if (this.SHOW_DETAILS) return
 
-      const currentX = gsap.getProperty(this.grid, "x")
-      const currentY = gsap.getProperty(this.grid, "y")
+        // Pinch to zoom
+        const zoomDelta = -e.deltaY * this.zoom.sensitivity
+        const oldZoom = this.zoom.target
+        this.zoom.target = Math.max(this.zoom.min, Math.min(this.zoom.max, this.zoom.target + zoomDelta))
 
-      const newX = currentX + deltaX
-      const newY = currentY + deltaY
+        // Only apply zoom if it actually changed
+        if (this.zoom.target !== oldZoom) {
+          // Viewport center point
+          const centerX = window.innerWidth / 2
+          const centerY = window.innerHeight / 2
 
-      const bounds = this.draggable.vars.bounds
-      const clampedX = Math.max(bounds.minX, Math.min(bounds.maxX, newX))
-      const clampedY = Math.max(bounds.minY, Math.min(bounds.maxY, newY))
+          // Get current transform and scale
+          const currentX = gsap.getProperty(this.grid, "x")
+          const currentY = gsap.getProperty(this.grid, "y")
 
-      gsap.to(this.grid, {
-        x: clampedX,
-        y: clampedY,
-        duration: 0.3,
-        ease: "power3.out"
-      })
+          // Calculate what point in the grid is currently at viewport center
+          // Grid point = (viewport center - grid position) / current scale
+          const gridCenterX = (centerX - currentX) / this.zoom.current
+          const gridCenterY = (centerY - currentY) / this.zoom.current
+
+          // Calculate new position so that same grid point stays at viewport center
+          // New position = viewport center - (grid point * new scale)
+          const newX = centerX - (gridCenterX * this.zoom.target)
+          const newY = centerY - (gridCenterY * this.zoom.target)
+
+          this.applyZoom(newX, newY)
+        }
+      } else {
+        // Regular pan
+        const deltaX = -e.deltaX * 7
+        const deltaY = -e.deltaY * 7
+
+        const currentX = gsap.getProperty(this.grid, "x")
+        const currentY = gsap.getProperty(this.grid, "y")
+
+        const newX = currentX + deltaX
+        const newY = currentY + deltaY
+
+        const bounds = this.draggable.vars.bounds
+        const clampedX = Math.max(bounds.minX, Math.min(bounds.maxX, newX))
+        const clampedY = Math.max(bounds.minY, Math.min(bounds.maxY, newY))
+
+        gsap.to(this.grid, {
+          x: clampedX,
+          y: clampedY,
+          duration: 0.3,
+          ease: "power3.out"
+        })
+      }
     }, { passive: false })
 
     window.addEventListener("resize", () => {
+      this.calculateZoomLimits()
       this.updateBounds()
     })
 
@@ -132,22 +213,118 @@ class Grid {
     })
   }
 
+  applyZoom(targetX, targetY) {
+    // Show all products when zooming out
+    if (this.zoom.target <= this.zoom.min * 1.2) {
+      this.products.forEach(product => {
+        gsap.to(product, {
+          scale: 1,
+          opacity: 1,
+          duration: 0.3,
+          ease: "power2.out",
+          overwrite: true
+        })
+      })
+    }
+
+    // Direct zoom without intermediate smoothing
+    const animConfig = {
+      scale: this.zoom.target,
+      duration: 0.2,
+      ease: "power1.out",
+      overwrite: true,
+      transformOrigin: "0% 0%", // Explicitly set transform origin to top-left
+      onUpdate: () => {
+        this.zoom.current = gsap.getProperty(this.grid, "scale")
+        this.updateBounds()
+      },
+      onComplete: () => {
+        // Trigger observer to re-check all products after zoom
+        this.updateProductVisibility()
+
+        // If zoomed out to show entire grid, center it
+        if (this.zoom.current <= this.zoom.min * 1.01) {
+          this.centerGridIfFitsInViewport()
+        }
+      }
+    }
+
+    // Apply position if provided
+    if (targetX !== undefined && targetY !== undefined) {
+      animConfig.x = targetX
+      animConfig.y = targetY
+    }
+
+    gsap.to(this.grid, animConfig)
+  }
+
+  updateProductVisibility() {
+    // Force update all product visibility based on current zoom
+    if (this.zoom.current <= this.zoom.min * 1.2) {
+      // Show all products when zoomed out
+      this.products.forEach(product => {
+        gsap.to(product, {
+          scale: 1,
+          opacity: 1,
+          duration: 0.2,
+          ease: "power2.out",
+          overwrite: true
+        })
+      })
+    }
+  }
+
+  centerGridIfFitsInViewport() {
+    const scaledWidth = this.grid.offsetWidth * this.zoom.current
+    const scaledHeight = this.grid.offsetHeight * this.zoom.current
+
+    // If grid is smaller than viewport, center it
+    if (scaledWidth <= window.innerWidth && scaledHeight <= window.innerHeight) {
+      const centerX = (window.innerWidth - scaledWidth) / 2
+      const centerY = (window.innerHeight - scaledHeight) / 2
+
+      gsap.to(this.grid, {
+        x: centerX,
+        y: centerY,
+        duration: 0.3,
+        ease: "power2.out"
+      })
+    }
+  }
+
   updateBounds() {
     if (this.draggable) {
+      const scaledWidth = this.grid.offsetWidth * this.zoom.current
+      const scaledHeight = this.grid.offsetHeight * this.zoom.current
+
       this.draggable.vars.bounds = {
-        minX: -(this.grid.offsetWidth - window.innerWidth) - 50,
-        maxX: 50,
-        minY: -(this.grid.offsetHeight - window.innerHeight) - 50,
-        maxY: 50
+        minX: -(scaledWidth - window.innerWidth),
+        maxX: 0,
+        minY: -(scaledHeight - window.innerHeight),
+        maxY: 0
       }
+
+      // Update draggable with new bounds
+      this.draggable.update()
     }
   }
 
   observeProducts() {
-    const observer = new IntersectionObserver((entries) => {
+    this.productObserver = new IntersectionObserver((entries) => {
       entries.forEach((entry) => {
 
         if (entry.target === this.currentProduct) return
+
+        // Always show products when zoomed out
+        if (this.zoom.current <= this.zoom.min * 1.2) {
+          gsap.to(entry.target, {
+            scale: 1,
+            opacity: 1,
+            duration: 0.3,
+            ease: "power2.out"
+          })
+          return
+        }
 
         if (entry.isIntersecting) {
           gsap.to(entry.target, {
@@ -157,6 +334,7 @@ class Grid {
             ease: "power2.out"
           })
         } else {
+          // Only hide when zoomed in
           gsap.to(entry.target, {
             opacity: 0,
             scale: 0.5,
@@ -167,11 +345,11 @@ class Grid {
       })
     }, {
       root: null,
-      threshold: 0.1
+      threshold: 0.05
     })
 
     this.products.forEach(product => {
-      observer.observe(product)
+      this.productObserver.observe(product)
     })
   }
 
@@ -210,6 +388,11 @@ class Grid {
     this.SHOW_DETAILS = true
     this.details.classList.add("--is-showing")
     this.dom.classList.add("--is-details-showing")
+
+    // Disable dragging and zooming while details are open
+    if (this.draggable) {
+      this.draggable.disable()
+    }
 
     gsap.to(this.dom, {
       x: "-50vw",
@@ -253,6 +436,11 @@ class Grid {
     this.SHOW_DETAILS = false
 
     this.dom.classList.remove("--is-details-showing")
+
+    // Re-enable dragging and zooming
+    if (this.draggable) {
+      this.draggable.enable()
+    }
 
     gsap.to(this.dom, {
       x: 0,
@@ -383,39 +571,9 @@ class Grid {
   }
 }
 
-function initializeGrid() {
-  const grid = new Grid()
+const grid = new Grid()
 
-  preloadImages('.grid img').then(() => {
-    grid.init()
-    document.body.classList.remove('loading')
-  })
-}
-
-// Check if Shopify products are being loaded
-function waitForShopifyProducts() {
-  if (window.shopifyProductsLoaded) {
-    // Products are loaded, initialize grid
-    initializeGrid()
-  } else {
-    // Wait for products to load
-    const checkInterval = setInterval(() => {
-      if (window.shopifyProductsLoaded) {
-        clearInterval(checkInterval)
-        initializeGrid()
-      }
-    }, 100)
-
-    // Timeout after 3 seconds and initialize with default products
-    setTimeout(() => {
-      if (!window.shopifyProductsLoaded) {
-        clearInterval(checkInterval)
-        console.warn('Shopify products not loaded, initializing with defaults')
-        initializeGrid()
-      }
-    }, 3000)
-  }
-}
-
-// Start initialization
-waitForShopifyProducts()
+preloadImages('.grid img').then(() => {
+  grid.init()
+  document.body.classList.remove('loading')
+})
