@@ -1,7 +1,5 @@
 {
-  "buildCommand": "cd integrated-website && npm install && npm run build",
-  "devCommand": "cd integrated-website && npm run dev",
-  "installCommand": "cd integrated-website && npm install",
-  "framework": "nextjs",
-  "outputDirectory": "integrated-website/.next"
+  "buildCommand": "npm run build",
+  "installCommand": "npm install",
+  "framework": "nextjs"
 }
